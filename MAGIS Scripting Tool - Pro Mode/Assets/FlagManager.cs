@@ -8,6 +8,7 @@ public class FlagManager : MonoBehaviour {
     public InputField f_inputfield; // Name input when adding flags
     public RectTransform f_management; // Flag management panel
     public Image disabler; // Disables buttons behind popup panel
+    public Image prompt; // The object used for error messages
 
     private ArrayList flags = new ArrayList(); // Store all flags here
 
@@ -32,19 +33,26 @@ public class FlagManager : MonoBehaviour {
     }
 
     bool CheckFlagName(string name) {
-        // TODO: do checks here
+        /* Checks whether the submitted flag name is alphanumeric
+         * Note that this also allows characters like åäö
+         * */
+        for(int i = 0; i < name.Length; i++) {
+            if (!char.IsLetterOrDigit(name[i])) {
+                prompt.GetComponent<ShowMessageDialogue>().RaiseError("Invalid flag name");
+                return false;
+            }
+        }
         return true;
     }
 
     public void ManageFlags() {
         /* Displays the flags for users to manage.
          * */
-
         if (!f_management.gameObject.activeInHierarchy) {
             disabler.gameObject.SetActive(true);
             f_management.gameObject.SetActive(true);
 
-            // TODO: figure out how to display flag management
+            // TODO: figure out how to display all flags and all related flag management functions
             for (int i = 0; i < flags.Count; i++) {
                 Debug.Log(flags[i]);
             }
@@ -57,13 +65,13 @@ public class FlagManager : MonoBehaviour {
 
     public void AddFlag() {
         /* Adds a new flag */
-
+        string newflag = f_inputfield.text;
         // check if the string is valid
-
-        // if valid, add
-        flags.Add(f_inputfield.text);
+        if (CheckFlagName(newflag)) {
+            flags.Add(newflag); // add flag
+            f_inputfield.gameObject.SetActive(false); // disable
+        }
         // reset
         f_inputfield.text = ""; // set default values because this object gets recycled
-        f_inputfield.gameObject.SetActive(false); // disable
     }
 }
