@@ -6,12 +6,15 @@ using UnityEngine.UI;
 public class FlagManager : MonoBehaviour {
 
     public InputField f_inputfield; // Name input when adding flags
+    public InputField searchBar; // Search bar for flags
     public RectTransform f_management; // Flag management panel
+    public RectTransform content; // The scrollrect that displays all flags
     public Image disabler; // Disables buttons behind popup panel
     public Image prompt; // The object used for error messages
-    public RectTransform content; // The scrollrect that displays all flags
     public Button flagDisplayButton; // Button used to display flags in Flag Management
+    public Button searchButton; // search button
 
+    private List<Button> buttonFlags = new List<Button>(); // list of button objects containing flag names
     private ArrayList flags = new ArrayList(); // Store all flags here
 
 	// Use this for initialization
@@ -64,6 +67,29 @@ public class FlagManager : MonoBehaviour {
         return true;
     }
 
+    bool CheckSearchQuery(string query) {
+        /* Checks whether the submitted search query is a valid query
+         * Note that this also allows characters like åäö
+         * Empty string query displays all flags
+         * */
+        bool valid = true;
+
+        // special characters
+        for (int i = 0; i < name.Length; i++) {
+            if (!char.IsLetterOrDigit(name[i])) {
+                valid = false;
+                break;
+            }
+        }
+
+        if (!valid) {
+            prompt.GetComponent<ShowMessageDialogue>().RaiseError("Invalid flag name");
+            return false;
+        }
+
+        return true;
+    }
+
     public void ManageFlags() {
         /* Displays the flags for users to manage.
          * */
@@ -71,7 +97,6 @@ public class FlagManager : MonoBehaviour {
             disabler.gameObject.SetActive(true);
             f_management.gameObject.SetActive(true);
             content.parent.parent.gameObject.transform.GetChild(1).GetComponent<Scrollbar>().value = 1; // reset the scrollbar scroll amount
-            DisplayFlags();
         }
         else {
             disabler.gameObject.SetActive(false);
@@ -90,26 +115,67 @@ public class FlagManager : MonoBehaviour {
 
             Button temp = (Button) Instantiate(flagDisplayButton, content); // add new button to content list
             temp.transform.GetChild(0).GetComponent<Text>().text = newflag; // set the button label
-            
-            temp.transform.localPosition = new Vector3(0, -(flags.Count-1)*30, 0); // check for position
-            content.sizeDelta = new Vector2(0, flags.Count * 30); // resize content rect
+            buttonFlags.Add(temp); // add new button to buttonFlags list, no need to access Content RectTransform children :D :D :D :D
+
+            RearrangeFlags();
+            //temp.transform.localPosition = new Vector3(0, -(flags.Count-1)*30, 0); // check for position
         }
         // reset
-        f_inputfield.text = ""; // set default values because this object gets recycled
+        f_inputfield.text = ""; // set default values because this object is reusable
     }
 
-    void DisplayFlags() {
-        /*
-         * Add flag
-         * Change Search bar
-         * Rename
-         * Delete
-         * Click manage flags XX
-         * Scrolling (auto) XX
+    private class ButtonSorter : IComparer<Button> {
+        /* Used to sort Button objects based on their text child
          * */
-
-        for(int i = 0; i < flags.Count; i++) {
-            
+        int IComparer<Button>.Compare(Button x, Button y) {
+            return string.Compare(x.transform.GetChild(0).GetComponent<Text>().text, y.transform.GetChild(0).GetComponent<Text>().text);
         }
+    }
+
+    private void RearrangeFlags() {
+        /* Rearranges buttonFlags displayed in Content alphabetically
+         * */
+        List<Button> activeFlags= new List<Button>(); // only sort the active flags; useful for search function
+        
+        foreach(Button b in buttonFlags) { // determine which flags are active
+            if (b.gameObject.activeInHierarchy) activeFlags.Add(b);
+        }
+
+        activeFlags.Sort(new ButtonSorter()); // sort according to comparator
+
+        for(int i = 0; i<activeFlags.Count; i++) { // display
+            Button current = activeFlags[i];
+            current.transform.localPosition = new Vector3(0, i * -30, 0);
+        }
+    }
+
+    public void Search() {
+        string query = searchBar.text;
+        //check if valid query
+        foreach(Button b in buttonFlags) {
+            b.gameObject.SetActive(true);
+        }
+
+        if(query == "") {
+            foreach(Button b in buttonFlags) {
+                if (!b.gameObject.activeInHierarchy) {
+                    b.gameObject.SetActive(true);
+                }
+            }
+        }
+        else {
+            if (!CheckSearchQuery(query)) {
+                searchBar.text = "";
+                return;
+            }
+
+            foreach (Button b in buttonFlags) {
+                string buttonLabel = b.transform.GetChild(0).GetComponent<Text>().text;
+                if (buttonLabel.Length < query.Length || buttonLabel.Substring(0, query.Length) != query) {
+                    b.gameObject.SetActive(false);
+                }
+            }
+        }
+        RearrangeFlags();
     }
 }
