@@ -2,14 +2,19 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 public class ShowMessageDialogue : MonoBehaviour {
 
     public Image disabler; // Disabler used for pop-up messages (3rd layer)
     public Image prompt; // The dialogue box to be used
 
-	// Use this for initialization
-	void Start () {
+    private void OnEnable() {
+        EventSystem.current.SetSelectedGameObject(null, null);
+    }
+
+    // Use this for initialization
+    void Start () {
         
 	}
 	
@@ -22,7 +27,7 @@ public class ShowMessageDialogue : MonoBehaviour {
         /* Raises an error using the dialogue box
          * */
         if (!prompt.gameObject.activeInHierarchy) {
-            disabler.gameObject.SetActive(true); // Disable everything behind the prompt
+            disabler.gameObject.SetActive(true);
             prompt.gameObject.SetActive(true); // The dialogue box
             prompt.transform.GetChild(0).GetComponent<Text>().text = errormsg;
         }

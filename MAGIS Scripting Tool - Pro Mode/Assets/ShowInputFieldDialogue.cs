@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 public class ShowInputFieldDialogue : MonoBehaviour {
     public Text message,
@@ -9,9 +10,16 @@ public class ShowInputFieldDialogue : MonoBehaviour {
         placeholder;
     public InputField inputField;
     public Button button;
+    public Image
+        disabler,
+        prompt; // self
 
-	// Use this for initialization
-	void Start () {
+    private void OnEnable() {
+        EventSystem.current.SetSelectedGameObject(null, null);
+    }
+
+    // Use this for initialization
+    void Start () {
 		
 	}
 	
@@ -20,19 +28,17 @@ public class ShowInputFieldDialogue : MonoBehaviour {
 		
 	}
 
-    public void SetButtonLabel(string name) {
-        button.transform.GetChild(0).GetComponent<Text>().text = name;
-    }
-
-    public void SetPlaceholderText(string pldt) {
-        placeholder.text = pldt;
-    }
-
-    public void SetActualText(string txt) {
-        inputField.text = txt;
-    }
-
-    public void SetMessage(string msg) {
+    public void ShowInputPrompt(string msg, string pldt, string txt, string btnlbl) {
+        prompt.gameObject.SetActive(true);
+        disabler.gameObject.SetActive(true);
         message.text = msg;
+        placeholder.text = pldt;
+        inputField.text = txt;
+        button.transform.GetChild(0).GetComponent<Text>().text = btnlbl;
+    }
+
+    public void DisableInputPrompt() {
+        prompt.gameObject.SetActive(false);
+        disabler.gameObject.SetActive(false);
     }
 }

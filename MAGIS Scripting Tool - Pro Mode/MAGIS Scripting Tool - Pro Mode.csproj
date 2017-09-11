@@ -87,6 +87,7 @@
     <Compile Include="Assets\Scripts\FlagManager.cs" />
     <Compile Include="Assets\Scripts\Manager.cs" />
     <Compile Include="Assets\Scripts\ShowMessageDialogue.cs" />
+    <Compile Include="Assets\ShowDecisionPrompt.cs" />
     <Compile Include="Assets\ShowInputFieldDialogue.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -18,17 +18,27 @@ public class FlagManager : MonoBehaviour {
         b_disabler, // Main layer disabler
         p_disabler, // Disables buttons behind popup panel
         p_message, // The object used for error messages
+        p_yesorno, // Yes or no prompt
         p_inputField; // The input field prompt
 
     public Button 
         b_flagButtonPrefab, // Button used to display flags in Flag Management; prefabs
         b_renameFlag, // function buttons
         b_deleteFlag, 
-        b_addFlag; 
+        b_addFlag;
 
     private List<Button> buttonFlags = new List<Button>(); // list of button objects containing flag names
     private ArrayList flags = new ArrayList(); // Store all flags here
-    private int renamingStage = 0; // which stage of renaming
+    private int
+        processStage = 0, // which stage of the process it's in
+        flagManagementState = 0;
+    /* Flag Management States:
+     * 0 -> Home
+     * 1 -> Add
+     * 2 -> Rename
+     * 3 -> Delete
+     * 4 -> Any State
+     * */
 
 	// Use this for initialization
 	void Start () {
@@ -37,17 +47,77 @@ public class FlagManager : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		
-	}
+        Debug.Log(flagManagementState);
+        // D E T E C T   I N P U T
+        if (rt_flagManagement.gameObject.activeInHierarchy) {
+            if (Input.GetKeyDown(KeyCode.Tab)) {
+                flagManagementState = 0;
+                //EventSystem.current.SetSelectedGameObject(if_searchBar.gameObject, null);
+                SetFocus(if_searchBar.gameObject);
+            }
+                
+            if (if_addFlag.isFocused) flagManagementState = 1;
+
+            if (!if_searchBar.isFocused) {
+                switch (flagManagementState) {
+                    case 0: { // Home
+                            if (Input.GetKeyDown(KeyCode.Escape)) { // close management panel
+                                if (if_addFlag.gameObject.activeInHierarchy) AddFlagDialogue();
+                                else ManageFlags();
+                            }
+                            if (Input.GetKeyDown(KeyCode.A)) { // add flags
+                                if (!if_addFlag.gameObject.activeInHierarchy) AddFlagDialogue();
+                            }
+                            if (Input.GetKeyDown(KeyCode.R)) { // rename flags
+                                Rename(null);
+                            }
+                            if (Input.GetKeyDown(KeyCode.D)) { // delete flags
+                                Delete(null);
+                            }
+                            break;
+                        }
+                    case 1: { // Add
+                              // Return -> Adds flag
+                            if (Input.GetKeyDown(KeyCode.Return)) {
+                                AddFlag();
+                            }
+                            // Escape -> Cancel, disable input field
+                            if (Input.GetKeyDown(KeyCode.Escape)) {
+                                AddFlagDialogue();
+                            }
+                            break;
+                        }
+                    case 2: { // Rename
+                              // Choosing flag
+                              // Esc -> cancel
+                              // Renaming Dialogue Box
+                              // Return -> 
+                              // submit rename if message box inactive
+                              // disable message box if active
+                              // Esc -> 
+                              // cancel rename if message box inactive
+                              // disable message box if active
+                            break;
+                        }
+                    case 3: { // Delete
+                              // Choosing flag
+                              // Esc -> cancel
+                              // Deleteing decision prmpt
+                              // Enter -> confirm delete
+                              // Esc -> cancel delete
+                            break;
+                        }
+                    default: {
+
+                            break;
+                        }
+                }
+            }
+        }
+    }
 
     public ArrayList GetFlags() {
         return flags;
-    }
-
-    public void AddFlagDialogue() {
-        /* Enables the text box and add button when adding new flags 
-         */
-        if_addFlag.gameObject.SetActive(true);
     }
 
     bool CheckFlagName(string name) {
@@ -107,17 +177,8 @@ public class FlagManager : MonoBehaviour {
         /* Displays the flags for users to manage.
          * */
         if (!rt_flagManagement.gameObject.activeInHierarchy) {
-            // Assume EVERYTHING is default
-            b_addFlag.interactable = true;
-            b_deleteFlag.interactable = true;
-            if_addFlag.text = "";
-            renamingStage = 0;
-            SetInteractable(false);
-            foreach (Button b in buttonFlags) {
-                b.onClick.RemoveAllListeners();
-            }
-            if_searchBar.text = "";
-
+            ResetToDefault();
+            flagManagementState = 0;
             b_disabler.gameObject.SetActive(true);
             rt_flagManagement.gameObject.SetActive(true);
             rt_content.parent.parent.gameObject.transform.GetChild(1).GetComponent<Scrollbar>().value = 1; // reset the scrollbar scroll amount
@@ -125,27 +186,22 @@ public class FlagManager : MonoBehaviour {
         else {
             b_disabler.gameObject.SetActive(false);
             rt_flagManagement.gameObject.SetActive(false);
-            if_addFlag.gameObject.SetActive(false);
         }
     }
 
-    public void AddFlag() {
-        /* Adds a new flag */
-        string newflag = if_addFlag.text;
-        // check if the string is valid
-        if (CheckFlagName(newflag)) {
-            flags.Add(newflag); // add flag
-            if_addFlag.gameObject.SetActive(false); // disable input field and button
-
-            Button temp = (Button) Instantiate(b_flagButtonPrefab, rt_content); // add new button to rt_content list
-            temp.transform.GetChild(0).GetComponent<Text>().text = newflag; // set the button label
-            buttonFlags.Add(temp); // add new button to buttonFlags list, no need to access Content RectTransform children :D :D :D :D
-
-            RearrangeFlags();
-            //temp.transform.localPosition = new Vector3(0, -(flags.Count-1)*30, 0); // check for position
+    void ResetToDefault() {
+        // Assume EVERYTHING is default
+        b_addFlag.interactable = true;
+        b_renameFlag.interactable = true;
+        b_deleteFlag.interactable = true;
+        if_addFlag.gameObject.SetActive(false);
+        if_addFlag.text = "";
+        if_searchBar.text = "";
+        processStage = 0;
+        SetInteractable(false);
+        foreach (Button b in buttonFlags) {
+            b.onClick.RemoveAllListeners();
         }
-        // reset
-        if_addFlag.text = ""; // set default values because this object is reusable
     }
     
     private class ButtonSorter : IComparer<Button> {
@@ -174,10 +230,45 @@ public class FlagManager : MonoBehaviour {
         }
     }
 
+    public void AddFlagDialogue() {
+        /* Enables the text box and add button when adding new flags 
+         */
+        flagManagementState = 1;
+        if (if_addFlag.gameObject.activeInHierarchy) {
+            flagManagementState = 0;
+            if_addFlag.gameObject.SetActive(false);
+        }
+        else {
+            if_addFlag.gameObject.SetActive(true);
+            SetFocus(if_addFlag.gameObject);
+        }
+    }
+
+    public void AddFlag() {
+        /* Adds a new flag */
+        string newflag = if_addFlag.text;
+        if (CheckFlagName(newflag)) {// check if the string is valid
+            flags.Add(newflag); // add flag
+            if_addFlag.gameObject.SetActive(false); // disable input field and button
+
+            Button temp = (Button)Instantiate(b_flagButtonPrefab, rt_content); // add new button to rt_content list
+            temp.transform.GetChild(0).GetComponent<Text>().text = newflag; // set the button label
+            buttonFlags.Add(temp); // add new button to buttonFlags list, no need to access Content RectTransform children :D :D :D :D
+
+            RearrangeFlags();
+            //temp.transform.localPosition = new Vector3(0, -(flags.Count-1)*30, 0); // check for position
+        }
+        // reset
+        flagManagementState = 0;
+        if_addFlag.text = ""; // set default values because this object is reusable
+    }
+
     public void Rename(Button renamedButton) {
         /* Enables the user to rename existing flags
          * */
-        switch (renamingStage) {
+        if (flags.Count == 0) return;
+        flagManagementState = 2;
+        switch (processStage) {
             case 0: { 
                     // click rename
                     if(buttonFlags.Count != 0) {
@@ -187,9 +278,9 @@ public class FlagManager : MonoBehaviour {
                         }
                         b_addFlag.interactable = false;
                         if_addFlag.gameObject.SetActive(false);
-                        if_addFlag.text = "";
+                        b_renameFlag.interactable = false;
                         b_deleteFlag.interactable = false;
-                        renamingStage = 1;
+                        processStage = 1;
                     }
                     break;
                 }
@@ -198,15 +289,8 @@ public class FlagManager : MonoBehaviour {
                     // inputField Dialogue appears
                     if(renamedButton.gameObject.name != "Rename") { // if click rename again
                         p_inputField.GetComponent<ShowInputFieldDialogue>().button.onClick.AddListener(delegate { Rename(renamedButton); }); // change the function of the prompt button
-                        p_disabler.gameObject.SetActive(true);
-                        p_inputField.gameObject.SetActive(true);
-
-                        ShowInputFieldDialogue sfd = p_inputField.GetComponent<ShowInputFieldDialogue>();
-                        sfd.SetButtonLabel("Rename");
-                        sfd.SetMessage("Renaming Flag " + renamedButton.transform.GetChild(0).GetComponent<Text>().text);
-                        sfd.SetPlaceholderText("Enter new name...");
-                        sfd.SetActualText("");
-                        renamingStage = 2;
+                        p_inputField.GetComponent<ShowInputFieldDialogue>().ShowInputPrompt("Renaming Flag " + renamedButton.transform.GetChild(0).GetComponent<Text>().text, "Enter new name...", "", "Rename");
+                        processStage = 2;
                     }
                     
                     break;
@@ -227,21 +311,75 @@ public class FlagManager : MonoBehaviour {
                         }
 
                         // reset everything and exit rename status
-                        p_disabler.gameObject.SetActive(false);
-                        p_inputField.gameObject.SetActive(false);
-                        renamingStage = 0;
-                        SetInteractable(false);
-                        foreach (Button b in buttonFlags) {
-                            b.onClick.RemoveAllListeners();
-                        }
+                        p_inputField.GetComponent<ShowInputFieldDialogue>().DisableInputPrompt();
                         p_inputField.GetComponent<ShowInputFieldDialogue>().button.onClick.RemoveAllListeners();
-                        b_addFlag.interactable = true;
-                        b_deleteFlag.interactable = true;
+                        ResetToDefault();
+                        flagManagementState = 0;
                     }
                     break;
                 }
             default:
                 break;
+        }
+    }
+
+    public void Delete(Button deletedButton) {
+        if (flags.Count == 0) return;
+        flagManagementState = 3;
+        switch (processStage) {
+            case 0: {
+                    // click delete
+                    if (buttonFlags.Count != 0) {
+                        SetInteractable(true);
+                        foreach (Button b in buttonFlags) {
+                            b.onClick.AddListener(delegate { Delete(b); });
+                        }
+                        b_addFlag.interactable = false;
+                        b_renameFlag.interactable = false;
+                        b_deleteFlag.interactable = false;
+                        if_addFlag.gameObject.SetActive(false);
+                        processStage = 1;
+                    }
+                    break;
+                }
+            case 1: {
+                    string flagToBeDeleted = deletedButton.transform.GetChild(0).GetComponent<Text>().text;
+                    //check for dependencies here, show message dialogue (unable to delete used flags)
+                    //p_message.GetComponent<ShowMessageDialogue>().RaiseError("Unable to delete " + flagToBeDeleted + ".");
+
+                    p_disabler.gameObject.SetActive(true);
+                    p_yesorno.gameObject.SetActive(true);
+                    p_yesorno.GetComponent<ShowDecisionPrompt>().yes.onClick.AddListener(delegate { Delete(deletedButton); });
+                    p_yesorno.GetComponent<ShowDecisionPrompt>().no.onClick.AddListener(delegate { Delete(null); });
+
+                    ShowDecisionPrompt sdc = p_yesorno.GetComponent<ShowDecisionPrompt>();
+                    sdc.SetMessage("Are you sure you want to delete " + flagToBeDeleted + "?");
+                    processStage = 2;
+                    break;
+                }
+            case 2: {
+                    if (deletedButton != null) {
+                        string name = deletedButton.transform.GetChild(0).GetComponent<Text>().text;
+                        for(int i = 0; i < flags.Count; i++) {
+                            if(flags[i] == name) {
+                                flags.RemoveAt(i);
+                                buttonFlags.Remove(deletedButton);
+                                Destroy(deletedButton.gameObject);
+                                RearrangeFlags();
+                                break;
+                            }
+                        }
+                    }
+
+                    p_yesorno.gameObject.SetActive(false);
+                    p_disabler.gameObject.SetActive(false);
+                    p_yesorno.GetComponent<ShowDecisionPrompt>().yes.onClick.RemoveAllListeners();
+                    p_yesorno.GetComponent<ShowDecisionPrompt>().no.onClick.RemoveAllListeners();
+                    ResetToDefault();
+                    flagManagementState = 0;
+                    break;
+                }
+            default: break;
         }
     }
 
@@ -281,5 +419,9 @@ public class FlagManager : MonoBehaviour {
          foreach(Button b in buttonFlags) {
             b.gameObject.GetComponent<Button>().interactable = status;
         }
+    }
+
+    void SetFocus(GameObject obj) {
+        EventSystem.current.SetSelectedGameObject(obj, null);
     }
 }
