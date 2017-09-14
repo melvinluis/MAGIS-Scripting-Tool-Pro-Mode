@@ -2679,7 +2679,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1419619250
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2750,6 +2750,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   if_addFlag: {fileID: 1659063119}
   if_searchBar: {fileID: 403552206}
+  if_recyclableInputField: {fileID: 1063653734}
   rt_flagManagement: {fileID: 1419619250}
   rt_content: {fileID: 240394353}
   b_disabler: {fileID: 445914630}
@@ -2762,6 +2763,9 @@ MonoBehaviour:
   b_renameFlag: {fileID: 840310609}
   b_deleteFlag: {fileID: 1868628674}
   b_addFlag: {fileID: 737622870}
+  b_recyclableInputFieldButton: {fileID: 52434302}
+  b_yesbutton: {fileID: 1812690225}
+  b_nobutton: {fileID: 1941035265}
 --- !u!1 &1425295048
 GameObject:
   m_ObjectHideFlags: 0
@@ -3640,7 +3644,7 @@ RectTransform:
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 20, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
